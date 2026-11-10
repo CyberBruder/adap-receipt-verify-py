@@ -1,28 +1,19 @@
 # adap-receipt-verify-py
 
-An **independent** Python verifier for ADAP authorization receipts
-(`adap.receipt` v1), written from the public spec at
-<https://github.com/Hardalion/agent-delegated-authority>.
+Um verificador em Python **independente** para recibos de autorização ADAP (`adap.receipt` v1), escrito a partir da especificação pública em <https://github.com/Hardalion/agent-delegated-authority>.
 
-**This project is not affiliated with, endorsed by, or maintained by Hardalion.**
-It does not import or copy code from the reference implementation. It exists to
-check that the spec is precise enough for a second implementation, in a different
-language, to reach the same results.
+**Este projeto não é afiliado, endossado ou mantido por Hardalion.** Ele não importa nem copia código da implementação de referência. Ele existe para verificar se a especificação é precisa o suficiente para que uma segunda implementação, em uma linguagem diferente, alcance os mesmos resultados.
 
-## What it does
+## O que ele faz
 
-- RFC 8785 (JCS) canonicalization, including ECMAScript number formatting and
-  UTF-16 key ordering (`adap_receipt_verify/jcs.py`)
-- `contentHash` check (spec section 5)
-- Ed25519 signature check (section 5, step 3)
-- Hash-chain check (section 7): sequence, `prevReceiptHash`, same issuer, plus two
-  optional inputs the reference verifier does not have: `expected_head` (detects a
-  dropped tail) and `first_sequence` (detects a dropped head)
+- Canonicalização RFC 8785 (JCS), incluindo formatação de números ECMAScript e ordenação de chaves em UTF-16 (`adap_receipt_verify/jcs.py`)
+- Verificação de `contentHash` (seção 5 da especificação)
+- Verificação de assinatura Ed25519 (seção 5, etapa 3)
+- Verificação da cadeia de hashes (seção 7): sequência, `prevReceiptHash`, mesmo emissor, além de duas entradas opcionais que o verificador de referência não possui: `expected_head` (detecta final omitido) e `first_sequence` (detecta início omitido)
 
-A receipt checked **without** a public key is never reported as valid, because the
-spec says that check has not completed step 3.
+Um recibo verificado **sem** uma chave pública nunca é relatado como válido, pois a especificação determina que essa verificação não concluiu a etapa 3.
 
-## Use
+## Uso
 
 ```bash
 pip install cryptography pytest
@@ -36,12 +27,10 @@ result = verify_receipt(receipt, public_key_spki_b64url)
 result.valid, result.errors
 ```
 
-## Tests
+## Testes
 
-28 tests: JCS vectors, a differential test against Node's `JSON.stringify` (the
-ECMAScript reference), tampering, wrong key, placeholder signature, and chain
-omission / reordering / dropped head / dropped tail.
+28 testes: vetores JCS, um teste diferencial contra o `JSON.stringify` do Node (a referência ECMAScript), adulteração, chave incorreta, assinatura placeholder e omissão / reordenação / início omitido / final omitido na cadeia.
 
-See [FINDINGS.md](FINDINGS.md) for what building this turned up.
+Veja [FINDINGS.md](FINDINGS.md) para conferir o que a construção deste projeto revelou.
 
-License: MIT
+Licença: MIT
