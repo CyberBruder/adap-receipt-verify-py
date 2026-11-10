@@ -1,0 +1,30 @@
+{
+  "v": 1,
+  "kind": "adap.receipt",
+  "receiptId": "rcpt_demo_1",
+  "issuer": "demo-issuer",
+  "decidedAt": "2026-11-10T12:00:00.000Z",
+  "intent": {
+    "toolName": "transfer",
+    "argsHash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "argsRedacted": {
+      "amount": 500.5
+    }
+  },
+  "identity": {
+    "agentId": "agt_demo",
+    "actorType": "non_human_agent",
+    "principalId": "prn_demo"
+  },
+  "decision": {
+    "action": "REQUIRE_HUMAN",
+    "outcome": "pending_human",
+    "reason": "demo",
+    "matched": true
+  },
+  "issuerKeyId": "ed25519:demo",
+  "integrity": {
+    "contentHash": "c05489960b0b2bc1557b2e455ca39a04b1a563f7397ecf2d58b7d41242521671"
+  },
+  "signature": "923107e7c6297d75a12559b39ff4bd30a60603cf3326ec64f5bf2c1c5c4ade072b464599d80ea2141c3d926d073159c008bd2c05b643237c1a91692f85da270c"
+}

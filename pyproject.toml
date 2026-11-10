@@ -1,0 +1,15 @@
+[project]
+name = "adap-receipt-verify"
+version = "0.1.0"
+description = "Independent Python verifier for ADAP authorization receipts (not affiliated with Hardalion)"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+dependencies = ["cryptography>=41"]
+
+[project.optional-dependencies]
+test = ["pytest"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
