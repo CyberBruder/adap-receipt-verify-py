@@ -1,6 +1,6 @@
-# adap-receipt-verify-py
+🇺🇸 [Read in English](README.md)
 
-🇺🇸 [Read in English](README.EN.md)
+# adap-receipt-verify-py
 
 Um verificador em Python **independente** para recibos de autorização ADAP (`adap.receipt` v1), escrito a partir da especificação pública em <https://github.com/Hardalion/agent-delegated-authority>.
 
