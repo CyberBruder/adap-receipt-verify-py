@@ -33,6 +33,6 @@ result.valid, result.errors
 
 28 testes: vetores JCS, um teste diferencial contra o `JSON.stringify` do Node (a referência ECMAScript), adulteração, chave incorreta, assinatura placeholder e omissão / reordenação / início omitido / final omitido na cadeia.
 
-Veja [FINDINGS.md](FINDINGS.md) para conferir o que a construção deste projeto revelou.
+Veja [FINDINGS.md](FINDINGS.PTBR.md) para conferir o que a construção deste projeto revelou.
 
 Licença: MIT
