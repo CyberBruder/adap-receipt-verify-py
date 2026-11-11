@@ -1,6 +1,7 @@
-🇧🇷 [Leia em português](README.md)
 
 # adap-receipt-verify-py
+
+🇧🇷 [Leia em português](README.md)
 
 An **independent** Python verifier for ADAP authorization receipts
 (`adap.receipt` v1), written from the public spec at
