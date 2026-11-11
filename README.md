@@ -1,7 +1,7 @@
 # adap-receipt-verify-py
 
 <div align="right">
-  <a href="README.md">🇧🇷 Leia em Português</a>
+  <a href="README.PTBR.md">🇧🇷 Leia em Português</a>
 </div>
 
 <br>
