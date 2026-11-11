@@ -110,7 +110,7 @@ docker run -d -p 8080:8080 --name meu-servidor-java JustBruder/my-docker:latest
 
 ---
 
-### 💻 Conecte-se comigo / Let's Connect
+### 💻 Contate-me / Let's Connect
 
 <p align="center">
   <a href="https://www.linkedin.com/in/ingrid-bruder" target="_blank">
@@ -119,16 +119,16 @@ docker run -d -p 8080:8080 --name meu-servidor-java JustBruder/my-docker:latest
   <a href="mailto:ibruder83@gmail.com">
     <img src="https://img.shields.io/badge/Email-C71585?style=for-the-badge&logo=gmail&logoColor=white" />
   </a>
-  <a href="https://www.instagram.com/JustBruder" target="_blank">
+  <a href="https://www.instagram.com/Cyber.Bruder" target="_blank">
     <img src="https://img.shields.io/badge/Instagram-C71585?style=for-the-badge&logo=instagram&logoColor=white" />
   </a>
-  <a href="https://www.tiktok.com/@JustBruder" target="_blank">
+  <a href="https://www.tiktok.com/@Cyber.Bruder" target="_blank">
     <img src="https://img.shields.io/badge/TikTok-C71585?style=for-the-badge&logo=tiktok&logoColor=white" />
   </a>
 </p>
 
 <div align="center">
-  <sub>Desenvolvido por JustBruder ✨</sub>
+  <sub>Desenvolvido por Bruder ✨</sub>
 </div>
 <div align="center">
   <sub>🌷🐱 Código limpo e MEOW </sub>
