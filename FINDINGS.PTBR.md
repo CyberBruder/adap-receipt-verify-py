@@ -1,135 +1,58 @@
-# adap-receipt-verify-py
-
 <div align="right">
-  <a href="README.md">🇺🇸 Read in English</a>
+  <a href="FINDINGS.md">🇺🇸 Read in English</a>
 </div>
 
-<br>
+# Achados de uma segunda implementação
 
-Um verificador em Python **independente** para recibos de autorização ADAP
-(`adap.receipt` v1), escrito a partir da especificação pública em
-<https://github.com/Hardalion/agent-delegated-authority>.
+Notas de quem implementou um verificador de recibos ADAP em Python a partir da
+especificação pública. Cada item diz como reproduzir. Os itens 1, 2 e 4 foram
+reportados ao projeto original.
 
-**Este projeto não é afiliado, endossado ou mantido pela Hardalion.**
-Ele não importa nem copia código da implementação de referência. Ele existe para
-verificar se a especificação é precisa o suficiente para que uma segunda implementação, em uma
-linguagem diferente, alcance os mesmos resultados.
+## 1. Chaves com aparência de inteiro eram ordenadas pela ordem de inserção (reportado, correção pendente)
 
-Especificação: ADAP, © Hardalion, Apache-2.0. Este repositório não contém código daquele projeto.
+Na referência em TypeScript, `canonicalReceiptJson` ordenava as chaves e depois as
+copiava para um objeto JavaScript comum. O JavaScript coloca chaves com aparência de
+inteiro (`"2"`, `"10"`) em ordem numérica antes das demais, o que desfazia a
+ordenação. `{"2":0,"9":2,"10":1,"a":3}` deve ser canonicalizado como
+`{"10":1,"2":0,"9":2,"a":3}`. Issue #3 do projeto original; a correção foi proposta
+no PR #12, fechado sem merge em 13/11/2026.
 
-## O que ele faz
+## 2. O verificador em Python do PR #12 difere do ECMAScript para inteiros grandes
 
-- Canonização RFC 8785 (JCS), incluindo formatação de números ECMAScript e
-  ordenação de chaves UTF-16 (`adap_receipt_verify/jcs.py`)
-- Verificação de `contentHash` (seção 5 da especificação)
-- Verificação de assinatura Ed25519 (seção 5, passo 3)
-- Verificação da cadeia de hashes (seção 7): sequência, `prevReceiptHash`, mesmo emissor, além de duas
-  entradas opcionais que o verificador de referência não possui: `expected_head` (detecta a
-  perda do final/tail) e `first_sequence` (detecta a perda do início/head)
+O `scripts/verify-canonical-json.py` mantém inteiros menores que 1e21 com todos os
+dígitos. Números JSON são doubles IEEE-754, então o ECMAScript os arredonda:
 
-Um recibo verificado **sem** uma chave pública nunca é reportado como válido, pois a
-especificação diz que a verificação não concluiu o passo 3.
+| entrada | ECMAScript (Node) | verificador do PR #12 |
+|---|---|---|
+| 9007199254740993 | 9007199254740992 | 9007199254740993 |
+| 12345678901234567890 | 12345678901234567000 | 12345678901234567890 |
 
-## Uso
+Em um teste diferencial com 25.822 casos de números contra o Node, 1.673 divergiram,
+todos inteiros entre 2^53 e 1e21. Esta implementação converte inteiros para double
+primeiro e teve 0 divergências. O PR #12 foi fechado sem merge; o script pode ser
+reescrito em um novo PR. O `json.dumps(sort_keys=True)` do próprio Python também
+difere do JCS em `500.0`, em `1e-07` e na ordem das chaves para caracteres fora do
+BMP.
 
-```bash
-pip install cryptography pytest
-python -m adap_receipt_verify examples/receipt.json --public-key MCowBQYDK2VwAyEAO3ukXVBh31tLC1HPgzy9MHlKtBOde9CTrkHYR55O3-8
-python -m pytest -q
-```
+## 3. Lacunas de verificação na referência (ainda não reportadas)
 
-```python
-from adap_receipt_verify import verify_receipt, verify_chain
-result = verify_receipt(receipt, public_key_spki_b64url)
-result.valid, result.errors
-```
+- `verifyAuthorizationReceipt` confere apenas estrutura e hash; `valid: true` não
+  significa que a assinatura foi verificada.
+- A assinatura placeholder do emissor de referência (`'ab'.repeat(64)`) passa na
+  verificação estrutural. Teste: `test_placeholder_signature_is_rejected`.
+- `verifyReceiptChain` não detecta um final removido (a spec documenta isso) e não
+  confere onde o primeiro recibo começa, a menos que `prevReceiptHash` seja passado.
+  Este repositório acrescenta `expected_head` e `first_sequence`.
 
-## Testes
+## 4. Observações sobre o emissor (reportadas ao projeto original)
 
-28 testes: vetores JCS, um teste diferencial contra o `JSON.stringify` do Node (a
-referência ECMAScript), adulteração, chave incorreta, assinatura temporária (placeholder) e
-omissão / reordenação / perda do início (dropped head) / perda do final (dropped tail) da cadeia.
+Veja a issue sobre o emissor: assinatura placeholder por padrão, `argsRedacted`
+copia os argumentos sem redigir e `receiptId` é derivado apenas do nome da
+ferramenta e do horário.
 
-Consulte [FINDINGS.md](FINDINGS.md) para ver o que a construção deste projeto revelou.
+## Limites deste trabalho
 
-Licença: MIT
-
----
-
-## Como Rodar o Projeto Localmente
-
-Se você quiser clonar este repositório e rodar o projeto na sua máquina:
-
-1. Certifique-se de ter o Docker instalado no seu sistema.
-
-2. Na raiz do projeto, construa a imagem Docker localmente:
-
-   ```bash
-   docker build -t meu-app-java .
-   ```
-
-3. Inicie o container mapeando as portas:
-
-   ```bash
-   docker run -p 8080:8080 meu-app-java
-   ```
-
-4. Abra o navegador e acesse: http://localhost:8080
-
-## O Pipeline de CI/CD (GitHub Actions)
-
-A esteira de automação foi configurada para eliminar qualquer trabalho manual de deploy. O fluxo funciona da seguinte forma:
-
-1. **Gatilho:** O desenvolvedor faz um `git push` na branch principal (`main`).
-2. **Ambiente:** O GitHub Actions inicializa uma máquina virtual isolada com `ubuntu-latest`.
-3. **Autenticação:** A esteira faz login no Docker Hub usando credenciais seguras (Repository Secrets).
-4. **Build & Push:** O Dockerfile é lido, o código Java é compilado dentro do container e a imagem final é enviada para o Docker Hub com duas tags:
-
-   * `latest` (para a versão mais recente).
-   * Uma tag com a SHA (identificador único) daquele commit específico para histórico.
-
-## Executando a partir da Nuvem (Portabilidade)
-
-Graças ao Docker Hub, você não precisa clonar este código para rodar a aplicação. Em qualquer servidor ou computador do mundo que tenha o Docker instalado, basta executar:
-
-```bash
-docker run -d -p 8080:8080 --name meu-servidor-java JustBruder/my-docker:latest
-```
-
-- Ver logs do app:
-
-  ```bash
-  docker logs meu-servidor-java
-  ```
-
-- Parar o app:
-
-  ```bash
-  docker stop meu-servidor-java
-  ```
-
----
-
-### 💻 Contate-me / Let's Connect
-
-<p align="center">
-  <a href="https://www.linkedin.com/in/ingrid-bruder" target="_blank">
-    <img src="https://img.shields.io/badge/LinkedIn-C71585?style=for-the-badge&logo=linkedin&logoColor=white" />
-  </a>
-  <a href="mailto:ibruder83@gmail.com">
-    <img src="https://img.shields.io/badge/Email-C71585?style=for-the-badge&logo=gmail&logoColor=white" />
-  </a>
-  <a href="https://www.instagram.com/Cyber.Bruder" target="_blank">
-    <img src="https://img.shields.io/badge/Instagram-C71585?style=for-the-badge&logo=instagram&logoColor=white" />
-  </a>
-  <a href="https://www.tiktok.com/@Cyber.Bruder" target="_blank">
-    <img src="https://img.shields.io/badge/TikTok-C71585?style=for-the-badge&logo=tiktok&logoColor=white" />
-  </a>
-</p>
-
-<div align="center">
-  <sub>Desenvolvido por Bruder ✨</sub>
-</div>
-<div align="center">
-  <sub>🌷🐱 Código limpo e MEOW </sub>
-</div>
+Testado com um recibo de demonstração e com recibos gerados pelos próprios testes,
+não com um conjunto vindo do emissor de referência. A validação de estrutura (tipos
+de campos, invariantes semânticas) não está implementada; apenas as verificações
+criptográficas.
