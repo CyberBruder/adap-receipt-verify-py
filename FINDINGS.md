@@ -1,16 +1,19 @@
-🇧🇷 [Leia em português](FINDINGS.md)
+<div align="right">
+  <a href="FINDINGS.PTBR.md">🇧🇷 Leia em Português</a>
+</div>
 
 # Findings from a second implementation
 
 Notes from implementing a verifier for ADAP receipts in Python from the public spec.
-Each item says how to reproduce it. Items 1 and 2 were reported upstream.
+Each item says how to reproduce it. Items 1, 2 and 4 were reported upstream.
 
-## 1. Integer-like keys were sorted in insertion order (reported, fixed upstream)
+## 1. Integer-like keys were sorted in insertion order (reported upstream, fix pending)
 
 In the TypeScript reference, `canonicalReceiptJson` sorted keys and then copied them
 into a normal JavaScript object. JavaScript orders integer-like keys (`"2"`, `"10"`)
 numerically before other keys, which undid the sort. `{"2":0,"9":2,"10":1,"a":3}`
-must canonicalize to `{"10":1,"2":0,"9":2,"a":3}`. Upstream issue #3, fixed in PR #12.
+must canonicalize to `{"10":1,"2":0,"9":2,"a":3}`. Upstream issue #3; a fix was
+proposed in PR #12, which was closed without merging on 2026-11-13.
 
 ## 2. The Python checker in PR #12 differs from ECMAScript for large integers
 
@@ -24,8 +27,9 @@ numbers are IEEE-754 doubles, so ECMAScript rounds them:
 
 In a differential run of 25,822 number cases against Node, 1,673 differed, all of
 them integers between 2^53 and 1e21. This implementation converts integers to doubles
-first and had 0 mismatches. Python's own `json.dumps(sort_keys=True)` also differs
-from JCS on `500.0`, `1e-07`, and on key order for characters outside the BMP.
+first and had 0 mismatches. PR #12 was closed unmerged; the script may be reworked in
+a new PR. Python's own `json.dumps(sort_keys=True)` also differs from JCS on `500.0`,
+`1e-07`, and on key order for characters outside the BMP.
 
 ## 3. Verification gaps in the reference (not yet reported)
 
