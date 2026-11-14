@@ -4,21 +4,26 @@
 
 # Findings from a second implementation
 
-Notes from implementing a verifier for ADAP receipts in Python from the public spec.
-Each item says how to reproduce it. Items 1, 2 and 4 were reported upstream.
+Notes from implementing a verifier for ADAP receipts in Python from the public spec,
+and from checking the maintainer's fixes. Each item says how to reproduce it.
+Items 1, 2 and 4 were reported upstream and closed as fixed by the maintainer.
+Last reviewed: 2026-11-14.
 
-## 1. Integer-like keys were sorted in insertion order (reported upstream, fix pending)
+## 1. Integer-like keys were sorted in insertion order (reported, fixed upstream)
 
 In the TypeScript reference, `canonicalReceiptJson` sorted keys and then copied them
 into a normal JavaScript object. JavaScript orders integer-like keys (`"2"`, `"10"`)
 numerically before other keys, which undid the sort. `{"2":0,"9":2,"10":1,"a":3}`
-must canonicalize to `{"10":1,"2":0,"9":2,"a":3}`. Upstream issue #3; a fix was
-proposed in PR #12, which was closed without merging on 2026-11-13.
+must canonicalize to `{"10":1,"2":0,"9":2,"a":3}`.
 
-## 2. The Python checker in PR #12 differs from ECMAScript for large integers
+Upstream issue #3. PR #12 was closed unmerged; the issue was then closed as fixed via
+PR #18. The updated shared test vectors include this case, and this implementation
+passes all 18 of them.
 
-`scripts/verify-canonical-json.py` keeps integers below 1e21 as exact digits. JSON
-numbers are IEEE-754 doubles, so ECMAScript rounds them:
+## 2. Large integers: the Python checker differed from ECMAScript (reported, vectors updated)
+
+The Python checker in PR #12 kept integers below 1e21 as exact digits. JSON numbers
+are IEEE-754 doubles, so ECMAScript rounds them:
 
 | input | ECMAScript (Node) | PR #12 checker |
 |---|---|---|
@@ -27,28 +32,52 @@ numbers are IEEE-754 doubles, so ECMAScript rounds them:
 
 In a differential run of 25,822 number cases against Node, 1,673 differed, all of
 them integers between 2^53 and 1e21. This implementation converts integers to doubles
-first and had 0 mismatches. PR #12 was closed unmerged; the script may be reworked in
-a new PR. Python's own `json.dumps(sort_keys=True)` also differs from JCS on `500.0`,
-`1e-07`, and on key order for characters outside the BMP.
+first and had 0 mismatches. Python's own `json.dumps(sort_keys=True)` also differs
+from JCS on `500.0`, `1e-07`, and on key order for characters outside the BMP.
 
-## 3. Verification gaps in the reference (not yet reported)
+The updated vectors now state that integers above 2^53 are rounded like a JavaScript
+`Number` and include `9007199254740993` and `12345678901234567890`. This
+implementation matches both the vectors and Node on them. I did not inspect the new
+Python checker script itself, only the vectors.
 
-- `verifyAuthorizationReceipt` checks structure and hash only; `valid: true` does not
-  mean the signature was checked.
-- The reference emitter's placeholder signature (`'ab'.repeat(64)`) passes the
-  structural check. Test: `test_placeholder_signature_is_rejected`.
+## 3. Verification gaps in the reference (partly addressed, not reported)
+
+- `verifyAuthorizationReceipt` checked structure and hash only; `valid: true` did not
+  mean the signature was checked. The maintainer says the verifier now never treats a
+  placeholder signature as valid. Not inspected.
 - `verifyReceiptChain` cannot detect a dropped tail (the spec documents this) and
   does not check where the first receipt starts unless `prevReceiptHash` is passed.
-  This repo adds `expected_head` and `first_sequence`.
+  The maintainer now documents that an external checkpoint is the host's
+  responsibility. This repo adds `expected_head` and `first_sequence`.
 
-## 4. Emitter observations (reported upstream)
+## 4. Emitter observations (reported, fixed upstream)
 
-See the upstream issue on the emitter: placeholder signature by default,
-`argsRedacted` copies arguments unredacted, and `receiptId` is derived from tool name
-and timestamp only.
+Reported in upstream issue #15: placeholder signature by default, `argsRedacted`
+copied arguments unredacted, `receiptId` derived only from tool name and timestamp,
+and chain state left to callers.
+
+Issue #15 was closed after PR #23. Reading the new emitter code (not running it):
+
+| Point | What the code does |
+|---|---|
+| Placeholder signature | Emission fails without `signer`, `signatureHex` or `demo: true` |
+| Argument redaction | Allowlist by default; copying everything needs `includeArgsUnredacted: true` |
+| `receiptId` | Includes 16 random bytes |
+| Chain state | `AuthorizationReceiptLog` tracks `sequence` and `prevReceiptHash` in memory |
+| Signing | `signReceipt` and `signReceiptBytes` are exported |
+
+## 5. Open observations (not reported)
+
+- `signatureHex` accepts the placeholder value (`'ab'.repeat(64)`) without requiring
+  `demo: true`. A code comment says the verifier rejects it; I have not seen the
+  verifier. Low severity.
+- `argsHash` is an unsalted hash of the full arguments, so values from a small space
+  (for example `amount: 500`) could be guessed by testing candidates, even when
+  `argsRedacted` hides them. A design observation, not a bug.
 
 ## Limits of this work
 
-Tested against a demo receipt and receipts generated by the tests themselves,
-not against a corpus from the reference emitter. Structure validation (field types,
-semantic invariants) is not implemented; only the cryptographic checks are.
+Tested against a demo receipt and receipts generated by the tests themselves, not
+against a corpus from the reference emitter. Structure validation (field types,
+semantic invariants) is not implemented; only the cryptographic checks are. The new
+emitter was read, not executed, and the new Python checker script was not inspected.
